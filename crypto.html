@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Crypto</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="es6-promise.min.js"></script>
+    <script src="forge.bundle.js"></script>
+    <script src="index.js"></script>
+    <script src="asmcrypto.lib.js"></script>
+
+    <script src="NativeCrypto.js"></script>
+    <script src="ForgeCrypto.js"></script>
+    <script src="ASMCrypto.js"></script>
+
+    <script src="execute.js"></script>
+
+    <script>
+      var cryptoWorker = new PromiseWorker(new Worker('workerCrypto.js'))
+
+      function launchTest() {
+        document.getElementById("testbutton").disabled = true
+
+        displayError({ message: '' })
+        var librarie   = document.querySelector('input[name="crypto"]:checked').value;
+        var algo       = document.querySelector('input[name="algo"]:checked').value;
+        var number     = document.querySelector('input[name="number"]:checked').value;
+        var launcher   = document.querySelector('input[name="launcher"]:checked').value;
+        var globaltime = Date.now()
+
+        if( launcher === 'main' ) {
+          execute(librarie, algo, number)
+            .then(displayTime.bind(this, [globaltime]))
+            .catch(displayError)
+        } else {
+          cryptoWorker.postMessage({
+            librarie: librarie,
+            number: number,
+            algo: algo,
+          }).then(function(results){
+            console.log(results)
+            displayTime(globaltime)
+          }).catch(displayError)
+        }
+      }
+
+      function displayTime(time) {
+        var el = document.getElementById('globaltime')
+        el.textContent = Math.floor(Date.now()-time)
+        document.getElementById("testbutton").disabled = false
+      }
+
+      function displayError(error) {
+        var el = document.getElementById('error')
+        el.textContent = error.message
+        document.getElementById("testbutton").disabled = false
+      }
+    </script>
+  </head>
+
+  <body>
+    <img style="float: left; margin: 15px;" src="boucle-gif-geometrique-02.gif">
+
+    <div style="float: left; margin: 15px;">
+      <h3>Crypto</h3>
+      <form action="">
+        <input type="radio" name="crypto" value="native" checked> Native Crypto<br>
+        <input type="radio" name="crypto" value="forge"> Forge Crypto<br>
+        <input type="radio" name="crypto" value="asm"> ASM Crypto<br>
+      </form>
+
+      <h3>Algo</h3>
+      <form action="">
+        <input type="radio" name="algo" value="AES-CBC" checked> AES-CBC<br>
+        <input type="radio" name="algo" value="AES-GCM"> AES-GCM<br>
+      </form>
+
+      <h3>Number of Iteration</h3>
+      <form action="">
+        <input type="radio" name="number" value="100" checked> 100<br>
+        <input type="radio" name="number" value="1000"> 1000<br>
+        <input type="radio" name="number" value="10000"> 10000<br>
+        <input type="radio" name="number" value="100000"> 100000<br>
+      </form>
+
+      <h3>Launcher</h3>
+      <form action="">
+        <input type="radio" name="launcher" value="main" checked> Main Thread<br>
+        <input type="radio" name="launcher" value="each"> Worker <br>
+      </form>
+
+      <button id="testbutton" onclick="launchTest()">Launch Test</button>
+    </div>
+
+    <div style="float: left; margin: 160px;">
+      <p> <strong>Execution Time:</strong> <span id="globaltime">0</span> ms</p>
+
+      <br>
+      <h2 style="color: red;" id="error"></h2>
+    </div>
+
+  </body>
+</html>
